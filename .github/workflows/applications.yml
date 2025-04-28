@@ -21,23 +21,30 @@ on:
 
 jobs:
   Test:
-    runs-on: ubuntu-22.04  # 替换为 ubuntu-22.04 或 ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
-        version: ['2.7', '3.7', '3.9']
+        version: ['3.7', '3.9']  # 移除 2.7，仅保留 3.7 和 3.9
 
     steps:
     - uses: actions/checkout@v4
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential zlib1g-dev libncurses5-dev \
+                                libgdbm-dev libnss3-dev libssl-dev libreadline-dev \
+                                libffi-dev curl libbz2-dev
     - uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.version }}
+    - name: Install python_appimage
+      run: pip install --upgrade python-appimage
 
     - name: Test scipy
       if: ${{ inputs.scipy }}
       run: |
         python -m python_appimage build app applications/scipy                 \
-                                            --python-version=2.7               \
-                                            --python-tag=cp27-cp27mu
+                                            --python-version=${{ matrix.version }}
         test -e scipy-x86_64.AppImage
         ./scipy-x86_64.AppImage -c 'import numpy, pandas, scipy'
 

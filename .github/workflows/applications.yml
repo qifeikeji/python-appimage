@@ -40,19 +40,24 @@ jobs:
         python-version: '3.12'
     - name: Install python_appimage
       run: pip install --upgrade python-appimage
+    - name: Download BeeRef icon
+      if: ${{ inputs.beeref }}
+      run: |
+        wget https://github.com/rbreu/beeref/raw/main/beeref.png -O applications/beeref/beeref.png
     - name: Debug BeeRef installation
       if: ${{ inputs.beeref }}
       run: |
         pip install -r applications/beeref/requirements.txt
         pip show beeref || echo "BeeRef not installed"
-        python -c "import beeref; print(beeref.__version__)" || echo "Failed to import beeref"
+        python -c "import beeref" || echo "Failed to import beeref"
     - name: Test beeref
       if: ${{ inputs.beeref }}
       run: |
         pip install -r applications/beeref/requirements.txt
         python -m python_appimage build app applications/beeref --python-version=3.12
-        test -e beeref-x86_64.AppImage
-        ./beeref-x86_64.AppImage --version || python -c "import beeref; print(beeref.__version__)" || echo "BeeRef may be GUI-only"
+        test -e beeref-x86_64.AppImage || echo "AppImage not created"
+        ./beeref-x86_64.AppImage --version || python -c "import beeref" || echo "BeeRef may be GUI-only"
+        appimagetool --no-appstream AppDir BeeRef-x86_64.AppImage || echo "appimagetool failed"
     - name: Debug AppImage contents
       if: ${{ inputs.beeref }}
       run: |

@@ -25,7 +25,7 @@ on:
 
 jobs:
   Test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-22. woven
     permissions:
       contents: write
     strategy:
@@ -40,7 +40,8 @@ jobs:
         sudo apt-get install -y build-essential zlib1g-dev libncurses5-dev \
                                 libgdbm-dev libnss3-dev libssl-dev libreadline-dev \
                                 libffi-dev curl libbz2-dev libfuse2 \
-                                qtbase5-dev qt5-qmake libqt5svg5-dev libgl1-mesa-dev
+                                qtbase5-dev qt5-qmake libqt5svg5-dev libgl1-mesa-dev \
+                                libqt5core5a libqt5gui5 libqt5widgets5
     - name: Install appimagetool
       run: |
         wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
@@ -51,6 +52,13 @@ jobs:
         python-version: ${{ matrix.version }}
     - name: Install python_appimage
       run: pip install --upgrade python-appimage
+
+    - name: Debug BeeRef installation
+      if: ${{ inputs.beeref }}
+      run: |
+        pip install -r applications/beeref/requirements.txt
+        pip show beeref
+        python -c "import beeref; print(beeref.__version__)" || echo "Failed to import beeref"
 
     - name: Test scipy
       if: ${{ inputs.scipy }}
@@ -113,10 +121,17 @@ jobs:
     - name: Test beeref
       if: ${{ inputs.beeref }}
       run: |
+        pip install -r applications/beeref/requirements.txt
         python -m python_appimage build app applications/beeref                \
                                             --python-version=${{ matrix.version }}
         test -e beeref-x86_64.AppImage
-        ./beeref-x86_64.AppImage --version || echo "BeeRef may be GUI-only"
+        ./beeref-x86_64.AppImage --version || python -c "import beeref; print(beeref.__version__)" || echo "BeeRef may be GUI-only"
+    - name: Debug AppImage contents
+      if: ${{ inputs.beeref }}
+      run: |
+        ./beeref-x86_64.AppImage --appimage-extract
+        find squashfs-root -name "beeref"
+        ls -lh squashfs-root/usr/lib/python*/site-packages/beeref || echo "BeeRef not found in site-packages"
     - name: Upload beeref AppImage
       if: ${{ inputs.beeref }}
       uses: actions/upload-artifact@v4

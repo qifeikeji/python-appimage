@@ -22,11 +22,14 @@ jobs:
         sudo apt-get update
     - name: Install system dependencies
       run: |
+        sudo apt-get update
         sudo apt-get install -y build-essential zlib1g-dev libncurses5-dev \
                                 libgdbm-dev libnss3-dev libssl-dev libreadline-dev \
                                 libffi-dev curl libbz2-dev libfuse2 \
                                 qtbase5-dev qt5-qmake libqt5svg5-dev libgl1-mesa-dev \
-                                libqt5core5a libqt5gui5 libqt5widgets5 python3.13 python3.13-dev python3.13-venv
+                                libqt5core5a libqt5gui5 libqt5widgets5 \
+                                python3.13 python3.13-dev python3.13-venv \
+                                libxml2-dev libxslt1-dev
     - name: Install appimagetool
       run: |
         wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage

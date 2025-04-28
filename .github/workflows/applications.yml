@@ -26,8 +26,8 @@ jobs:
         sudo apt-get install -y build-essential zlib1g-dev libncurses5-dev \
                                 libgdbm-dev libnss3-dev libssl-dev libreadline-dev \
                                 libffi-dev curl libbz2-dev libfuse2 \
-                                qtbase5-dev qt5-qmake libqt5svg5-dev libgl1-mesa-dev \
-                                libqt5core5a libqt5gui5 libqt5widgets5 \
+                                qt6-base-dev qt6-tools-dev libqt6svg6-dev libgl1-mesa-dev \
+                                libqt6core6 libqt6gui6 libqt6widgets6 \
                                 python3.12 python3.12-dev python3.12-venv \
                                 libxml2-dev libxslt1-dev
     - name: Install appimagetool
@@ -40,10 +40,11 @@ jobs:
         python-version: '3.12'
     - name: Install python_appimage
       run: pip install --upgrade python-appimage
-    - name: Download BeeRef icon
+    - name: Test PyPI beeref
       if: ${{ inputs.beeref }}
       run: |
-        wget https://github.com/rbreu/beeref/raw/main/beeref.png -O applications/beeref/beeref.png
+        pip install beeref || echo "beeref not found on PyPI"
+        pip show beeref || echo "BeeRef not installed"
     - name: Debug BeeRef installation
       if: ${{ inputs.beeref }}
       run: |

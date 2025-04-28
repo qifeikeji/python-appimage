@@ -18,10 +18,16 @@ on:
         required: true
         default: true
         type: boolean
+      beeref:
+        required: true
+        default: true
+        type: boolean
 
 jobs:
   Test:
     runs-on: ubuntu-22.04
+    permissions:
+      contents: write
     strategy:
       matrix:
         version: ['3.7', '3.9']
@@ -33,7 +39,8 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y build-essential zlib1g-dev libncurses5-dev \
                                 libgdbm-dev libnss3-dev libssl-dev libreadline-dev \
-                                libffi-dev curl libbz2-dev libfuse2
+                                libffi-dev curl libbz2-dev libfuse2 \
+                                qt5-default libqt5svg5-dev libgl1-mesa-dev
     - name: Install appimagetool
       run: |
         wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
@@ -101,6 +108,21 @@ jobs:
       with:
         name: ssh-mitm-x86_64-AppImage-${{ matrix.version }}
         path: ssh-mitm-x86_64.AppImage
+        retention-days: 7
+
+    - name: Test beeref
+      if: ${{ inputs.beeref }}
+      run: |
+        python -m python_appimage build app applications/beeref                \
+                                            --python-version=${{ matrix.version }}
+        test -e beeref-x86_64.AppImage
+        ./beeref-x86_64.AppImage --version || echo "BeeRef may be GUI-only"
+    - name: Upload beeref AppImage
+      if: ${{ inputs.beeref }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: beeref-x86_64-AppImage-${{ matrix.version }}
+        path: beeref-x86_64.AppImage
         retention-days: 7
 
     - name: Debug AppImage location

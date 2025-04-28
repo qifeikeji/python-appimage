@@ -14,7 +14,7 @@ jobs:
       contents: write
     steps:
     - uses: actions/checkout@v4
-    - name: Add deadsnakes PPA for Python 3.13
+    - name: Add deadsnakes PPA for Python 3.12
       run: |
         sudo apt-get update
         sudo apt-get install -y software-properties-common
@@ -28,7 +28,7 @@ jobs:
                                 libffi-dev curl libbz2-dev libfuse2 \
                                 qtbase5-dev qt5-qmake libqt5svg5-dev libgl1-mesa-dev \
                                 libqt5core5a libqt5gui5 libqt5widgets5 \
-                                python3.13 python3.13-dev python3.13-venv \
+                                python3.12 python3.12-dev python3.12-venv \
                                 libxml2-dev libxslt1-dev
     - name: Install appimagetool
       run: |
@@ -37,7 +37,7 @@ jobs:
         sudo mv appimagetool-x86_64.AppImage /usr/local/bin/appimagetool
     - uses: actions/setup-python@v4
       with:
-        python-version: '3.13'
+        python-version: '3.12'
     - name: Install python_appimage
       run: pip install --upgrade python-appimage
     - name: Debug BeeRef installation
@@ -50,7 +50,7 @@ jobs:
       if: ${{ inputs.beeref }}
       run: |
         pip install -r applications/beeref/requirements.txt
-        python -m python_appimage build app applications/beeref --python-version=3.13
+        python -m python_appimage build app applications/beeref --python-version=3.12
         test -e beeref-x86_64.AppImage
         ./beeref-x86_64.AppImage --version || python -c "import beeref; print(beeref.__version__)" || echo "BeeRef may be GUI-only"
     - name: Debug AppImage contents
@@ -63,7 +63,7 @@ jobs:
       if: ${{ inputs.beeref }}
       uses: actions/upload-artifact@v4
       with:
-        name: beeref-x86_64-AppImage-3.13
+        name: beeref-x86_64-AppImage-3.12
         path: beeref-x86_64.AppImage
         retention-days: 7
     - name: Debug AppImage location

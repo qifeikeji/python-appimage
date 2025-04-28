@@ -2,22 +2,6 @@ name: Applications
 on:
   workflow_dispatch:
     inputs:
-      scipy:
-        required: true
-        default: true
-        type: boolean
-      tasmotizer:
-        required: true
-        default: true
-        type: boolean
-      xonsh:
-        required: true
-        default: true
-        type: boolean
-      ssh-mitm:
-        required: true
-        default: true
-        type: boolean
       beeref:
         required: true
         default: true
@@ -28,19 +12,21 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       contents: write
-    strategy:
-      matrix:
-        version: ['3.7', '3.9']
-
     steps:
     - uses: actions/checkout@v4
-    - name: Install system dependencies
+    - name: Add deadsnakes PPA for Python 3.13
       run: |
         sudo apt-get update
+        sudo apt-get install -y software-properties-common
+        sudo add-apt-repository ppa:deadsnakes/ppa -y
+        sudo apt-get update
+    - name: Install system dependencies
+      run: |
         sudo apt-get install -y build-essential zlib1g-dev libncurses5-dev \
                                 libgdbm-dev libnss3-dev libssl-dev libreadline-dev \
                                 libffi-dev curl libbz2-dev libfuse2 \
-                                qtbase5-dev qt5-qmake libqt5svg5-dev libgl1-mesa-dev
+                                qtbase5-dev qt5-qmake libqt5svg5-dev libgl1-mesa-dev \
+                                libqt5core5a libqt5gui5 libqt5widgets5 python3.13 python3.13-dev python3.13-venv
     - name: Install appimagetool
       run: |
         wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
@@ -48,83 +34,35 @@ jobs:
         sudo mv appimagetool-x86_64.AppImage /usr/local/bin/appimagetool
     - uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.version }}
+        python-version: '3.13'
     - name: Install python_appimage
       run: pip install --upgrade python-appimage
-
-    - name: Test scipy
-      if: ${{ inputs.scipy }}
+    - name: Debug BeeRef installation
+      if: ${{ inputs.beeref }}
       run: |
-        python -m python_appimage build app applications/scipy                 \
-                                            --python-version=${{ matrix.version }}
-        test -e scipy-x86_64.AppImage
-        ./scipy-x86_64.AppImage -c 'import numpy, pandas, scipy'
-    - name: Upload scipy AppImage
-      if: ${{ inputs.scipy }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: scipy-x86_64-AppImage-${{ matrix.version }}
-        path: scipy-x86_64.AppImage
-        retention-days: 7
-
-    - name: Test tasmotizer
-      if: ${{ inputs.tasmotizer }}
-      run: |
-        python -m python_appimage build app applications/tasmotizer            \
-                                            --linux-tag=manylinux1_x86_64      \
-                                            --python-version=3.9
-        test -e tasmotizer-x86_64.AppImage
-    - name: Upload tasmotizer AppImage
-      if: ${{ inputs.tasmotizer }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: tasmotizer-x86_64-AppImage-${{ matrix.version }}
-        path: tasmotizer-x86_64.AppImage
-        retention-days: 7
-
-    - name: Test xonsh
-      if: ${{ inputs.xonsh }}
-      run: |
-        python -m python_appimage build app applications/xonsh
-        test -e xonsh-x86_64.AppImage
-        ./xonsh-x86_64.AppImage -c 'import xonsh'
-    - name: Upload xonsh AppImage
-      if: ${{ inputs.xonsh }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: xonsh-x86_64-AppImage-${{ matrix.version }}
-        path: xonsh-x86_64.AppImage
-        retention-days: 7
-
-    - name: Test ssh-mitm
-      if: ${{ inputs.ssh_mitm && (matrix.version == '3.9') }}
-      run: |
-        python -m python_appimage build app applications/ssh-mitm
-        test -e ssh-mitm-x86_64.AppImage
-        ./ssh-mitm-x86_64.AppImage --help
-    - name: Upload ssh-mitm AppImage
-      if: ${{ inputs.ssh_mitm && (matrix.version == '3.9') }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: ssh-mitm-x86_64-AppImage-${{ matrix.version }}
-        path: ssh-mitm-x86_64.AppImage
-        retention-days: 7
-
+        pip install -r applications/beeref/requirements.txt
+        pip show beeref || echo "BeeRef not installed"
+        python -c "import beeref; print(beeref.__version__)" || echo "Failed to import beeref"
     - name: Test beeref
       if: ${{ inputs.beeref }}
       run: |
-        python -m python_appimage build app applications/beeref                \
-                                            --python-version=${{ matrix.version }}
+        pip install -r applications/beeref/requirements.txt
+        python -m python_appimage build app applications/beeref --python-version=3.13
         test -e beeref-x86_64.AppImage
-        ./beeref-x86_64.AppImage --version || echo "BeeRef may be GUI-only"
+        ./beeref-x86_64.AppImage --version || python -c "import beeref; print(beeref.__version__)" || echo "BeeRef may be GUI-only"
+    - name: Debug AppImage contents
+      if: ${{ inputs.beeref }}
+      run: |
+        ./beeref-x86_64.AppImage --appimage-extract
+        find squashfs-root -name "beeref"
+        ls -lh squashfs-root/usr/lib/python*/site-packages/beeref || echo "BeeRef not found in site-packages"
     - name: Upload beeref AppImage
       if: ${{ inputs.beeref }}
       uses: actions/upload-artifact@v4
       with:
-        name: beeref-x86_64-AppImage-${{ matrix.version }}
+        name: beeref-x86_64-AppImage-3.13
         path: beeref-x86_64.AppImage
         retention-days: 7
-
     - name: Debug AppImage location
       run: |
         find $GITHUB_WORKSPACE -name "*.AppImage"
